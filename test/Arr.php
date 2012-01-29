@@ -114,6 +114,10 @@ var_dump($arr->sliding(2, 2)->toArrayRecursive() === array(array(0=>1, 1=>2), ar
 var_dump($arr->sliding(4, 3)->toArrayRecursive() === array(array(0=>1, 1=>2, 2=>3, 3=>4), array(3=>4, 4=>5, 5=>6, 6=>7), array(6=>7, 7=>8, 8=>9)));
 
 var_dump(Arr::make(1,2,3,1,2,8)->distinct()->toArray() === array(0=>1,1=>2,2=>3,5=>8));
+var_dump(Arr::from(array(array(1,2,3), array(4,5,6), array(7,8,9)))->transpose()->toArray() === array(array(1, 4, 7), array(2, 5, 8), array(3, 6, 9)));
+var_dump(Arr::from(array(array(1,2,3,4,5,6,7,8,9)))->transpose()->toArray() === array(array(1), array(2), array(3), array(4), array(5), array(6), array(7), array(8), array(9)));
+var_dump(Arr::from(array(array(1,2,3,4,5,6,7,8,9), array(10,11,12,13,14,15,16,17,18)))->transpose()->toArray() === array(array(1, 10), array(2, 11), array(3, 12), array(4, 13), array(5, 14), array(6, 15), array(7, 16), array(8, 17), array(9, 18)));
+var_dump(Arr::from(array(array(1,2), array(3,4), array(5,6), array(7,8)))->transpose()->toArray() === array(array(1, 3, 5, 7), array(2, 4, 6, 8)));
 
 list($l, $r) = $arr->partition(function($v) { return $v % 2 === 0; });
 var_dump($l->toArray() === array(1=>2,3=>4,5=>6,7=>8));

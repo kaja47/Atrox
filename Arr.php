@@ -116,7 +116,7 @@ class Arr implements \IteratorAggregate, \ArrayAccess, \Countable {
   function take($c)           { return $this->slice(0, $c); }
   function takeRight($c)      { return $this->slice(-$c, $c); }
   function takeWhile($f)      { $res = array(); foreach ($this as $k => $v) { if (!$f($v)) break; $res[$k] = $v; } return new Arr($res); }
-//  function transpose()        {  }
+  function transpose()        { $arr = $this->toArray(); array_unshift($arr, null); $arr = call_user_func_array('array_map', $arr); foreach ($arr as $k => $v) $arr[$k] = (array)$v; return new Arr($arr); }
   function toArray()          { return $this->arr; }
   function toArrayRecursive() { $res = $this->arr; foreach ($res as $k => $v) { $res[$k] = ($v instanceof self ? $v->toArray() : $v); } return $res; }
   function toArrayObject()    { return new \ArrayObject($this->arr);  }
