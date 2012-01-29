@@ -97,7 +97,7 @@ class Arr implements \IteratorAggregate, \ArrayAccess, \Countable {
   function grouped($size)     { $res = new Arr(array_chunk($this->toArray(), $size, true)); return $res->map(function ($e) { return new Arr($e); }); }
   function map($f)            { return new Arr(array_map($f, $this->toArray())); }
 //  function mapPairs($f)       { $res = array(); foreach ($this as $k => $v) { $res[$k] = $f($k, $v); } return new Arr($res); } // todo ???
-//  function remap($f)
+  function remap($f)          { $res = array(); foreach ($this as $k => $v) foreach ($f($k, $v) as $nk => $nv) $res[$nk] = $nv; return new Arr($res); }
   function padTo($len, $el)   { return new Arr(array_pad($this->toArray(), $len, $el)); }
   function partition($f)      { $a = $b = array(); foreach ($this as $k => $v) { if ($f($v)) $a[$k] = $v; else $b[$k] = $v; } return array(new static($a), new static($b)); }
   function reverse()          { return new Arr(array_reverse($this->toArray(), true)); }

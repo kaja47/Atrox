@@ -148,6 +148,10 @@ var_dump(Arr::make(0,5)->map($strarr)->toArray() === array('1', 'xxxxxx'));
 var_dump($multiarr->flatten()->toArray() === array(1,2,3,10,20,30,100,200,300));
 var_dump(Arr::make(1,2,3)->flip()->toArray() === array(1=>0,2=>1,3=>2));
 
+var_dump(Arr::make(10,20,30)->remap(function ($k, $v) { return array($v => $v); })->toArray() === array(10=>10,20=>20,30=>30));
+var_dump(Arr::make(10,20,30)->remap(function ($k, $v) { return array($v => $k); })->toArray() === array(10=>0,20=>1,30=>2));
+var_dump(Arr::make(10,20,30)->remap(function ($k, $v) { return array($v => $v, $v+1 => $v+1); })->toArray() === array(10=>10,11=>11,20=>20,21=>21,30=>30,31=>31));
+
 $defarr = $arr->withDefaultValue(100);
 var_dump($defarr[0] === 1);
 var_dump($defarr[1] === 2);
