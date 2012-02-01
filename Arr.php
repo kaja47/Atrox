@@ -80,6 +80,8 @@ class Arr implements \IteratorAggregate, \ArrayAccess, \Countable {
   function tail()             { return $this->drop(1); }
   function inits()            { $res = array($this); $col = $this; while ($col->nonEmpty()) { $res[] = $col = $col->init(); } return new Arr($res); }
   function tails()            { $res = array($this); $col = $this; while ($col->nonEmpty()) { $res[] = $col = $col->tail(); } return new Arr($res); }
+  function headTail()         { return array($this->head(), $this->tail()); }
+  function initLast()         { return array($this->init(), $this->last()); }
 
   function collect($f)        { return $this->map($f)->filter(); }
   function distinct($sortFlag = SORT_REGULAR) { return new Arr(array_unique($this->toArray(), $sortFlag)); }

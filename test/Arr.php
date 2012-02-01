@@ -113,6 +113,14 @@ var_dump($arr->sliding(7)->toArrayRecursive() === array(array(0=>1, 1=>2, 2=>3, 
 var_dump($arr->sliding(2, 2)->toArrayRecursive() === array(array(0=>1, 1=>2), array(2=>3, 3=>4), array(4=>5, 5=>6), array(6=>7, 7=>8), array(8=>9)));
 var_dump($arr->sliding(4, 3)->toArrayRecursive() === array(array(0=>1, 1=>2, 2=>3, 3=>4), array(3=>4, 4=>5, 5=>6, 6=>7), array(6=>7, 7=>8, 8=>9)));
 
+list($x, $xs) = $arr->headTail();
+var_dump($x === 1);
+var_dump($xs->toArray() === array(1=>2,2=>3,3=>4,4=>5,5=>6,6=>7,7=>8,8=>9));
+
+list($xs, $x) = $arr->initLast();
+var_dump($x === 9);
+var_dump($xs->toArray() === array(0=>1,1=>2,2=>3,3=>4,4=>5,5=>6,6=>7,7=>8));
+
 var_dump(Arr::make(1,2,3,1,2,8)->distinct()->toArray() === array(0=>1,1=>2,2=>3,5=>8));
 var_dump(Arr::from(array(array(1,2,3), array(4,5,6), array(7,8,9)))->transpose()->toArray() === array(array(1, 4, 7), array(2, 5, 8), array(3, 6, 9)));
 var_dump(Arr::from(array(array(1,2,3,4,5,6,7,8,9)))->transpose()->toArray() === array(array(1), array(2), array(3), array(4), array(5), array(6), array(7), array(8), array(9)));
