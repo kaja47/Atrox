@@ -22,6 +22,19 @@ final class Func
   /** chain(array($fa, $fb, $fc, $fd)) -> $fa($fb($fc($fd))) */
   static function chain($fs) { return self::make(function ($x) use($fs) { return array_reduce($fs, function ($x, $f) { return $f($x); }, $x); }); }
 
+  /** function passed as argument is executed only once, every subsequent call reuse this result */
+  static function lazy($f) {
+    $isSet = $value = false;
+    return function() use(&$isSet, &$value, $f) {
+      if (!$isSet) {
+        $value = $f();
+        $isSet = true;
+      }
+      return $value;
+    };
+  }
+
+
   /** $f($a, $b, $c) --[curried]-> $f($a)($b)($c) */
   function curried($argsCount = 'required', $args = array()) {
     if ($argsCount === self::REQUIRED || $argsCount === self::OPTIONAL) {
