@@ -2,7 +2,6 @@
 
 error_reporting(E_ALL);
 
-require_once __DIR__.'/../libs/nette.min.php';
 require_once __DIR__.'/../Func.php';
 
 use Atrox\Func;
@@ -78,5 +77,30 @@ var_dump($fn(array()) === false);
 $fs = array(function ($a) { return $a.'1'; }, function ($a) { return str_repeat($a, 10); }, function ($a) { return $a.'2'; });
 $f = Func::chain($fs);
 var_dump($f('_') === "_1_1_1_1_1_1_1_1_1_12");
+
+
+echo "Func::arr\n";
+
+$f = Func::arr("abcdef");
+var_dump($f(0) === "a");
+var_dump($f(1) === "b");
+
+$f = Func::arr([1 => "one", 2 => "two", 3 => "three"]);
+var_dump($f(1) === "one");
+var_dump($f(2) === "two");
+
+$f = Func::arr(new ArrayObject([1 => "one", 2 => "two", 3 => "three"]));
+var_dump($f(1) === "one");
+var_dump($f(2) === "two");
+
+$f = Func::keySet("abcdef");
+var_dump($f(0) === true);
+var_dump($f(5) === true);
+var_dump($f(6) === false);
+
+$f = Func::keySet([1 => "one", 2 => "two", 3 => "three"]);
+var_dump($f(1) === true);
+var_dump($f(2) === true);
+var_dump($f(0) === false);
 
 
