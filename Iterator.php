@@ -2,15 +2,28 @@
 
 namespace Atrox;
 
+require __DIR__.'/GenLike.php';
+
 trait IteratorLike {
-  function map($f)     { return new MappedIterator($this, $f); }
-  function flatMap($f) { return new FlatMappedIterator($this, $f); }
-  function filter($p)  { return new FilteredIterator($this, $p); }
-  function slice($offset, $count) { return new SlicedIterator($this, $offset, $count); }
-  function append(\Iterator $iter) { return new AppendedIterator($this, $iter); }
+  use GenLike;
+
+  function make($gen) { return new Iterator($gen); }
+
+  function filter($p)  { return new FilteredIterator($this->iter(), $p); }
+  function slice($offset, $count) { return new SlicedIterator($this->iter(), $offset, $count); }
+
+  function append(\Iterator $iter) {
+    return new Iterator(Gen::flatten(array_merge([$this->iter()], func_get_args())));
+  }
+
+  function toArray() { return iterator_to_array($this->iter()); }
 }
 
-trait DelegrateInnerIterator {
+trait DelegateInnerIterator {
+  private $iter;
+
+  function __construct(\Iterator $iter) { $this->iter = $iter; }
+
   function current() { return $this->iter->current(); }
   function key()     { return $this->iter->key(); }
   function next()    { return $this->iter->next(); }
@@ -21,57 +34,22 @@ trait DelegrateInnerIterator {
 
 class Iterator implements \Iterator {
   use IteratorLike;
-  use DelegrateInnerIterator;
+  use DelegateInnerIterator;
 
-  private $iter;
+  function iter() { return $this->iter; }
 
-  function __construct(\Iterator $iter) { $this->iter = $iter; }
+  static function of($arr = []) {
+    if ($arr instanceof \Closure)
+      return new Iterator($arr());
 
-  static function fromArray(array $arr) { return new self(new \ArrayIterator($arr)); }
-}
-
-class MappedIterator implements \Iterator {
-  use IteratorLike;
-  use DelegrateInnerIterator;
-
-  private $iter, $f;
-
-  function __construct(\Iterator $iter, $f) { $this->iter = $iter; $this->f = $f; }
-
-  function current()
-  {
-    return call_user_func($this->f, $this->iter->current());
+    return new Iterator(Gen::flatten(func_get_args()));
   }
 
-}
-
-class FlatMappedIterator implements \Iterator {
-  use IteratorLike;
-  use DelegrateInnerIterator;
-
-  private $iter;
-
-  function __construct(\Iterator $iter, $f) {
-    $is = array_map($f, iterator_to_array($iter)); // fixme: eagerly evaluates passed iterator
-    $app = new \AppendIterator;
-    foreach ($is as $i) $app->append($i);
-    $this->iter = $app;
+  static function zero() {
+    return new EmptyIterator;
   }
 }
 
-class FilteredIterator extends \CallbackFilterIterator {
-  use IteratorLike;
-}
-
-class SlicedIterator extends \LimitIterator {
-  use IteratorLike;
-}
-
-class AppendedIterator implements \Iterator {
-  use IteratorLike;
-  use DelegrateInnerIterator;
-
-  private $iter;
-
-  function __construct(\Iterator $iter) { $this->iter = new \AppendIterator; foreach (func_get_args() as $i) { $this->iter->append($i); } }
-}
+class FilteredIterator extends \CallbackFilterIterator { use IteratorLike; }
+class SlicedIterator extends \LimitIterator { use IteratorLike; }
+class EmptyIterator extends \EmptyIterator { use IteratorLike; }
