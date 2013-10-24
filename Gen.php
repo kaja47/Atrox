@@ -4,10 +4,60 @@ namespace Atrox;
 
 class Gen {
 
+  static function continuallyApply($f) {
+    while (true) yield $f();
+  }
+
+  static function continually($el) {
+    while (true) yield $el;
+  }
+
+  static function zero() {
+    return; yield;
+  }
+
+  static function fillApply($len, $f) {
+    for ($i = 0; $i < $len; $i++)
+      yield $f();
+  }
+
+  static function fill($len, $el) {
+    for ($i = 0; $i < $len; $i++)
+      yield $el;
+  }
+
+  static function from($start, $step = 1) {
+    for ($i = $start;; $i += $step)
+      yield $i;
+  }
+
+  static function iterate($start, $f) {
+    while (true) {
+      yield $start;
+      $start = $f($start);
+    }
+  }
+
+  static function range($start, $end, $step = 1) {
+    for ($i = $start; $i < $end; $i += $step)
+      yield $i;
+  }
+
+  static function single($el) {
+    yield $el;
+  }
+
+  static function tabulate($end, $f) {
+    for ($i = 0; $i < $end; $i++)
+      yield $f($i);
+  }
+
   static function of($gen) {
     foreach ($gen as $k => $v)
       yield $k => $v;
   }
+
+  // ***
 
   static function map($gen, $f) {
     foreach ($gen as $k => $v)
@@ -147,16 +197,16 @@ class Gen {
 
   static function forall($gen, $p) {
     foreach ($gen as $v) {
-      if (!$p($v)) return FALSE;
+      if (!$p($v)) return false;
     }
-    return TRUE;
+    return true;
   }
 
   static function exists($gen, $p) {
     foreach ($gen as $v) {
-      if ($p($v)) return TRUE;
+      if ($p($v)) return true;
     }
-    return FALSE;
+    return false;
   }
 
   static function corresponds($genA, $genB, $p) {
