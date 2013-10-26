@@ -3,6 +3,7 @@
 namespace Atrox;
 
 require_once __DIR__.'/GenLike.php';
+require_once __DIR__.'/Iterator.php';
 
 final class LazyArrayList implements \IteratorAggregate, \ArrayAccess, \Countable {
   use GenLike;
@@ -40,7 +41,7 @@ final class LazyArrayList implements \IteratorAggregate, \ArrayAccess, \Countabl
 
   // *** IteratorAggregate
 
-  function getIterator() {
+  private function getRawIterator() {
     for ($i = 0; $i < $this->list->count(); $i++)
       yield $this->list[$i];
 
@@ -50,6 +51,10 @@ final class LazyArrayList implements \IteratorAggregate, \ArrayAccess, \Countabl
         return;
       yield $this->list[$i];
     }
+  }
+
+  function getIterator() {
+    return new Iterator($this->getRawIterator());
   }
 
   // *** Countable
