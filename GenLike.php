@@ -2,7 +2,7 @@
 
 namespace Atrox;
 
-require __DIR__.'/Gen.php';
+require_once __DIR__.'/Gen.php';
 
 trait GenLike {
 

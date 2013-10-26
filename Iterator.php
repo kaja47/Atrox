@@ -2,7 +2,7 @@
 
 namespace Atrox;
 
-require __DIR__.'/GenLike.php';
+require_once __DIR__.'/GenLike.php';
 
 trait IteratorLike {
   use GenLike;
