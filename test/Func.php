@@ -10,11 +10,14 @@ use Atrox\Func;
 $cf = Func::make('substr')->curried();
 
 $a = $cf('0123456789');
-//$b = $cf('yyyyyyy');
 
 var_dump($a(0, 2) === '01');
 var_dump($a(2, 2) === '23');
 
+$cf = Func::curry('substr', 3);
+$f = $cf('0123456789', 1);
+var_dump($f(1) === '1');
+var_dump($f(4) === '1234');
 
 $f = Func::make('substr')->curried(999);
 $f = $f('0123456789', 2, 2);

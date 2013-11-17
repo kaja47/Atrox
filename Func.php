@@ -7,20 +7,23 @@ trait FuncLike {
   protected function func() { return $this; }
   protected function makeFunc($f) { return Func::make($f); }
 
-  /** $f($a, $b, $c) --[curried]-> $f($a)($b)($c) */
+  /**
+   * $f = function ($a, $b, $c) { ... }
+   * $c = $f->curried();
+   * $f($a, $b, $c) === $c($a, $b, $c) === $c($a)($b)($c) === $c($a, $b)($c) === $c($a)($b, $c)
+   */
   function curried($argsCount = 'required', $args = []) {
-    if ($argsCount === self::REQUIRED || $argsCount === self::OPTIONAL) {
+    if ($argsCount === Func::REQUIRED || $argsCount === Func::OPTIONAL) {
       $f = $this->func();
-      $refl = is_array($f) ? new \ReflectionMethod($f[0], $f[1]) : new \ReflectionFunction($f);
-      $argsCount = ($argsCount === self::REQUIRED) ? $refl->getNumberOfRequiredParameters() : $refl->getNumberOfParameters();
+      $r = is_array($f) ? new \ReflectionMethod($f[0], $f[1]) : new \ReflectionFunction($f);
+      $argsCount = ($argsCount === Func::REQUIRED) ? $r->getNumberOfRequiredParameters() : $r->getNumberOfParameters();
     }
 
-    $self = $this;
-    return $this->makeFunc(function () use($argsCount, $args, $self) { 
+    return $this->makeFunc(function () use ($argsCount, $args) { 
       $args = array_merge($args, func_get_args());
       if (count($args) >= $argsCount || func_num_args() === 0) 
-        return call_user_func_array($self->f, $args);
-      return $self->curried($argsCount, $args);
+        return call_user_func_array($this->func(), $args);
+      return $this->curried($argsCount, $args);
     });
   }
 
@@ -80,6 +83,11 @@ final class Func
   // requirement of trait FuncLike 
   protected function func() { return $this->f; }
   protected function makeFunc($f) { return self::make($f); }
+
+
+  static function curry($f, $argsCount) {
+    return self::make($f)->curried($argsCount);
+  }
 
 
   /** chain([$fa, $fb, $fc, $fd]) -> $fa($fb($fc($fd))) */
