@@ -2,6 +2,8 @@
 
 error_reporting(E_ALL);
 
+require_once __DIR__.'/../FuncLike.php';
+require_once __DIR__.'/../BooleanCombinators.php';
 require_once __DIR__.'/../Func.php';
 
 use Atrox\Func;
