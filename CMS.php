@@ -81,7 +81,7 @@ class CountMinSketch {
     return $hash % $this->width;
   }
 
-  function add($item, $count = 1) { // long item
+  function addInt($item, $count = 1) {
     if ($count < 0) {
       throw new IllegalArgumentException("Negative increments not implemented");
     }
@@ -98,18 +98,35 @@ class CountMinSketch {
     $this->heavyHitters->updateHeavyHitters($item, $count, $est, $this->size);
   }
 
-//  function add($item, $count) { // string item
-//    if ($count < 0) {
-//      throw new IllegalArgumentException("Negative increments not implemented");
-//    }
-//    $buckets = Filter::getHashBuckets($item, $depth, $width);
-//    for ($i = 0; $i < $this->depth; ++$i) {
-//      $this->table[$i][$buckets[$i]] += $count;
-//    }
-//    $this->size += $count;
-//  }
+  function getHashBuckets($item, $depth, $width) {
+    $buckets = [];
+    $hash1 = crc32($item);
+    $hash2 = crc32($item . $hash1);
+    for ($i = 0; $i < $depth; ++$i) {
+      $buckets[$i] = abs(($hash1 + $i * $hash2) % $width);
+    }
+    return $buckets;
+  }
 
-  function size() {
+  function addString($item, $count = 1) {
+    if ($count < 0) {
+      throw new IllegalArgumentException("Negative increments not implemented");
+    }
+
+    $buckets = $this->getHashBuckets($item, $this->depth, $this->width);
+
+    $hash1 = crc32($item);
+    $hash2 = crc32($item . $hash1);
+    for ($i = 0; $i < $this->depth; ++$i) {
+      $bucket = abs(($hash1 + $i * $hash2) % $this->width);
+      $this->table[$i * $this->width + $buckets[$i]] += $count;
+    }
+    $this->size += $count;
+
+    $this->heavyHitters->updateHeavyHitters($item, $count, $this->estimateCountString($item), $this->size);
+  }
+
+  function getSize() {
     return $this->size;
   }
 
@@ -117,7 +134,7 @@ class CountMinSketch {
    * The estimate is correct within 'epsilon' * (total item count),
    * with probability 'confidence'.
    */
-  function estimateCount($item) {
+  function estimateCountInt($item) {
     $res = PHP_INT_MAX;
     for ($i = 0; $i < $this->depth; ++$i) {
       $res = min($res, $this->table[$i * $this->width + $this->hash($item, $i)]);
@@ -125,14 +142,14 @@ class CountMinSketch {
     return $res;
   }
 
-//  function estimateCount($item) { // string
-//    $res = PHP_INT_MAX;
-//    $buckets = Filter::getHashBuckets($item, $this->depth, $this->width);
-//    for ($i = 0; $i < $this->depth; ++$i) {
-//      $res = min($res, $this->table[$i * $this->width + $buckets[$i]]);
-//    }
-//    return $res;
-//  }
+  function estimateCountString($item) { // string
+    $res = PHP_INT_MAX;
+    $buckets = $this->getHashBuckets($item, $this->depth, $this->width);
+    for ($i = 0; $i < $this->depth; ++$i) {
+      $res = min($res, $this->table[$i * $this->width + $buckets[$i]]);
+    }
+    return $res;
+  }
 }
 
 final class HeavyHitters {
@@ -141,6 +158,10 @@ final class HeavyHitters {
 
   function __construct($heavyHittersPct) {
     $this->heavyHittersPct = $heavyHittersPct;
+  }
+
+  function getItems() {
+    return array_keys($this->hhs);
   }
 
   function updateHeavyHitters($item, $count, $estimate, $totalSize) {
