@@ -15,8 +15,8 @@ class CountMinSketch {
   public $eps;
   public $confidence;
 
-  public $table = []; // long[][]
-  public $hashA = []; // long[]
+  public $table; // SplFixedArray
+  public $hashA; // long[]
   public $size = 0;
 
   public $heavyHitters;
@@ -37,7 +37,7 @@ class CountMinSketch {
     return new CountMinSketch($depth, $width, $epsOfTotalCount, $confidence, $seed, $heavyHittersPct);
   }
 
-  function __construct($depth, $width, $eps, $confidence, $seed, $heavyHittersPct) {
+  function __construct($depth, $width, $eps, $confidence, $seed, $heavyHittersPct = 100) {
     $this->depth = $depth;
     $this->width = $width;
     $this->eps   = $eps;
@@ -49,7 +49,7 @@ class CountMinSketch {
   }
 
   private function initTablesWith($depth, $width, $seed) {
-    $this->table = array_fill(0, $depth, array_fill(0, $width, 0));
+    $this->table = \SplFixedArray::fromArray(array_fill(0, $depth * $width, 0));
     $this->hashA = [];
     mt_srand($seed);
     // We're using a linear hash functions
@@ -63,11 +63,11 @@ class CountMinSketch {
     }
   }
 
-  public function getRelativeError() {
+  function getRelativeError() {
     return $this->eps;
   }
 
-  public function getConfidence() {
+  function getConfidence() {
     return $this->confidence;
   }
 
@@ -78,7 +78,7 @@ class CountMinSketch {
     // page 149, right after Proposition 7.
     $hash += $hash >> 32;
     $hash &= self::PRIME_MODULUS;
-    return ((int) $hash) % $this->width;
+    return $hash % $this->width;
   }
 
   function add($item, $count = 1) { // long item
@@ -88,8 +88,10 @@ class CountMinSketch {
     $est = PHP_INT_MAX;
     for ($i = 0; $i < $this->depth; ++$i) {
       $hash = $this->hash($item, $i);
-      $this->table[$i][$hash] += $count;
-      $est = min($est, $this->table[$i][$hash]);
+      $p = $i * $this->width + $hash;
+      $c = $this->table[$p];
+      $this->table[$p] = $c + $count;
+      $est = ($est < ($c+$count)) ? $est : ($c + $count); // faster than calling min()
     }
     $this->size += $count;
 
@@ -118,18 +120,18 @@ class CountMinSketch {
   function estimateCount($item) {
     $res = PHP_INT_MAX;
     for ($i = 0; $i < $this->depth; ++$i) {
-      $res = min($res, $this->table[$i][$this->hash($item, $i)]);
+      $res = min($res, $this->table[$i * $this->width + $this->hash($item, $i)]);
     }
     return $res;
   }
 
-//  public long estimateCount(String item) {
-//    long res = Long.MAX_VALUE;
-//    int[] buckets = Filter.getHashBuckets(item, depth, width);
-//    for (int i = 0; i < depth; ++i) {
-//      res = Math.min(res, table[i][buckets[i]]);
+//  function estimateCount($item) { // string
+//    $res = PHP_INT_MAX;
+//    $buckets = Filter::getHashBuckets($item, $this->depth, $this->width);
+//    for ($i = 0; $i < $this->depth; ++$i) {
+//      $res = min($res, $this->table[$i * $this->width + $buckets[$i]]);
 //    }
-//    return res;
+//    return $res;
 //  }
 }
 
