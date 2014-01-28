@@ -1,0 +1,166 @@
+<?php
+
+namespace Atrox;
+
+// based on: 
+// - https://github.com/addthis/stream-lib/blob/master/src/main/java/com/clearspring/analytics/stream/frequency/CountMinSketch.java
+// - https://github.com/twitter/algebird/blob/fcf005e230a72102f0dc25678fd2c33104f32d42/algebird-core/src/main/scala/com/twitter/algebird/CountMinSketch.scala
+
+class CountMinSketch {
+
+  const PRIME_MODULUS = 2147483647; // (1 << 31) - 1;
+
+  public $depth;
+  public $width;
+  public $eps;
+  public $confidence;
+
+  public $table = []; // long[][]
+  public $hashA = []; // long[]
+  public $size = 0;
+
+  public $heavyHitters;
+
+  static function fromDim($depth, $width, $seed, $heavyHittersPct) {
+    $eps = 2.0 / $width;
+    $confidence = 1 - 1 / pow(2, $depth);
+
+    return new CountMinSketch($depth, $width, $eps, $confidence, $seed);
+  }
+
+  static function fromProp($epsOfTotalCount, $confidence, $seed, $heavyHittersPct) {
+    // 2/w = eps ; w = 2/eps
+    // 1/2^depth <= 1-confidence ; depth >= -log2 (1-confidence)
+    $width = (int) ceil(2 / $epsOfTotalCount);
+    $depth = (int) ceil(-log(1 - $confidence) / log(2));
+
+    return new CountMinSketch($depth, $width, $epsOfTotalCount, $confidence, $seed, $heavyHittersPct);
+  }
+
+  function __construct($depth, $width, $eps, $confidence, $seed, $heavyHittersPct) {
+    $this->depth = $depth;
+    $this->width = $width;
+    $this->eps   = $eps;
+    $this->confidence = $confidence;
+
+    $this->initTablesWith($depth, $width, $seed);
+
+    $this->heavyHitters = new HeavyHitters($heavyHittersPct);
+  }
+
+  private function initTablesWith($depth, $width, $seed) {
+    $this->table = array_fill(0, $depth, array_fill(0, $width, 0));
+    $this->hashA = [];
+    mt_srand($seed);
+    // We're using a linear hash functions
+    // of the form (a*x+b) mod p.
+    // a,b are chosen independently for each hash function.
+    // However we can set b = 0 as all it does is shift the results
+    // without compromising their uniformity or independence with
+    // the other hashes.
+    for ($i = 0; $i < $depth; ++$i) {
+      $this->hashA[$i] = mt_rand();
+    }
+  }
+
+  public function getRelativeError() {
+    return $this->eps;
+  }
+
+  public function getConfidence() {
+    return $this->confidence;
+  }
+
+  private function hash($item, $i) { // long item
+    $hash = $this->hashA[$i] * $item;
+    // A super fast way of computing x mod 2^p-1
+    // See http://www.cs.princeton.edu/courses/archive/fall09/cos521/Handouts/universalclasses.pdf
+    // page 149, right after Proposition 7.
+    $hash += $hash >> 32;
+    $hash &= self::PRIME_MODULUS;
+    return ((int) $hash) % $this->width;
+  }
+
+  function add($item, $count = 1) { // long item
+    if ($count < 0) {
+      throw new IllegalArgumentException("Negative increments not implemented");
+    }
+    $est = PHP_INT_MAX;
+    for ($i = 0; $i < $this->depth; ++$i) {
+      $hash = $this->hash($item, $i);
+      $this->table[$i][$hash] += $count;
+      $est = min($est, $this->table[$i][$hash]);
+    }
+    $this->size += $count;
+
+    $this->heavyHitters->updateHeavyHitters($item, $count, $est, $this->size);
+  }
+
+//  function add($item, $count) { // string item
+//    if ($count < 0) {
+//      throw new IllegalArgumentException("Negative increments not implemented");
+//    }
+//    $buckets = Filter::getHashBuckets($item, $depth, $width);
+//    for ($i = 0; $i < $this->depth; ++$i) {
+//      $this->table[$i][$buckets[$i]] += $count;
+//    }
+//    $this->size += $count;
+//  }
+
+  function size() {
+    return $this->size;
+  }
+
+  /**
+   * The estimate is correct within 'epsilon' * (total item count),
+   * with probability 'confidence'.
+   */
+  function estimateCount($item) {
+    $res = PHP_INT_MAX;
+    for ($i = 0; $i < $this->depth; ++$i) {
+      $res = min($res, $this->table[$i][$this->hash($item, $i)]);
+    }
+    return $res;
+  }
+
+//  public long estimateCount(String item) {
+//    long res = Long.MAX_VALUE;
+//    int[] buckets = Filter.getHashBuckets(item, depth, width);
+//    for (int i = 0; i < depth; ++i) {
+//      res = Math.min(res, table[i][buckets[i]]);
+//    }
+//    return res;
+//  }
+}
+
+final class HeavyHitters {
+  public $hhs = []; // [item => count]
+  public $heavyHittersPct; 
+
+  function __construct($heavyHittersPct) {
+    $this->heavyHittersPct = $heavyHittersPct;
+  }
+
+  function updateHeavyHitters($item, $count, $estimate, $totalSize) {
+    $oldItemCount = $estimate;
+    $newItemCount = $oldItemCount + $count;
+    $newTotalCount = $totalSize + $count;
+
+    // If the new item is a heavy hitter, add it, and remove any previous instances.
+    if ($newItemCount >= $this->heavyHittersPct * $newTotalCount) {
+      $this->hhs[$item] = $newItemCount;
+    }
+
+    // Remove any items below the new heavy hitter threshold.
+    $this->dropCountsBelow($this->heavyHittersPct * $newTotalCount);
+  }
+
+  function dropCountsBelow($minCount) {
+    foreach ($this->hhs as $item => $count) {
+      if ($count < $minCount)
+        unset($this->hhs[$item]);
+    }
+  }
+}
+
+
