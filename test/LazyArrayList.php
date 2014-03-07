@@ -1,6 +1,7 @@
 <?php
 
-require_once __DIR__.'/../LazyArrayList.php';
+require_once __DIR__.'/../src/LazyArrayList.php';
+
 
 use Atrox\LazyArrayList;
 

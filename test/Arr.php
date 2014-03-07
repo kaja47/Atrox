@@ -2,7 +2,7 @@
 
 error_reporting(E_ALL);
 
-require __DIR__.'/../Arr.php';
+require __DIR__.'/../src/Arr.php';
 
 use Atrox\Arr;
 

@@ -2,7 +2,7 @@
 
 error_reporting(E_ALL);
 
-require __DIR__.'/../IntArray.php';
+require __DIR__.'/../src/IntArray.php';
 
 use Atrox\BitSet;
 

@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__.'/../Gen.php';
+require_once __DIR__.'/../src/Gen.php';
 
 use Atrox\Gen;
 

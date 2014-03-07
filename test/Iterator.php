@@ -2,7 +2,8 @@
 
 error_reporting(E_ALL);
 
-require __DIR__.'/../Iterator.php';
+require __DIR__.'/../src/Iterator.php';
+
 
 use Atrox\Iterator;
 
