@@ -64,6 +64,11 @@ class Gen {
       yield $k => $f($v);
   }
 
+  static function mapPairs($gen, $f) {
+    foreach ($gen as $k => $v)
+      yield $k => $f($k, $v);
+  }
+
   static function flatten($gen) {
     foreach ($gen as $xs)
       foreach ($xs as $x)

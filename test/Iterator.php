@@ -6,6 +6,7 @@ require __DIR__.'/../src/Iterator.php';
 
 
 use Atrox\Iterator;
+use Atrox\Gen;
 
 function gen($from, $to) {
   for ($i = $from; $i <= $to; $i++)
@@ -42,6 +43,12 @@ var_dump(iterator_to_array($it) === [1,2,3,4,5,6,7,8]);
 
 $it = Iterator::of(gen(1,9))->map($timesTwo);
 var_dump(iterator_to_array($it) === [2,4,6,8,10,12,14,16,18]);
+
+$it = Iterator::of(gen(101,105))->mapPairs(function ($k, $v) { return $k; });
+var_dump(iterator_to_array($it) === [0,1,2,3,4]);
+
+$it = (new Iterator(Gen::of([5=>10,10=>20,15=>30])))->mapPairs(function ($k, $v) { return $k+$v; });
+var_dump(iterator_to_array($it) === [5=>15,10=>30,15=>45]);
 
 $it = Iterator::of(gen(1,100))->filter($lessThanFour);
 var_dump(iterator_to_array($it) === [1,2,3]);

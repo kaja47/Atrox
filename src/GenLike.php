@@ -10,6 +10,7 @@ trait GenLike {
   function iter()     { return $this; }
 
   function map($f)                   { return $this->make(Gen::map($this->iter(), $f)); } 
+  function mapPairs($f)              { return $this->make(Gen::mapPairs($this->iter(), $f)); } 
   function flatten()                 { return $this->make(Gen::flatten($this->iter())); } 
   function flatMap($f)               { return $this->make(Gen::flatMap($this->iter(), $f)); } 
   function filter($p)                { return $this->make(Gen::filter($this->iter(), $p)); } 
