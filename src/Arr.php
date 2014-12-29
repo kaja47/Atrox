@@ -90,7 +90,7 @@ class Arr implements \IteratorAggregate, \ArrayAccess, \Countable {
   function dropWhile($f)      { $res = array(); $go = false; foreach ($this as $k => $v) { if (!$f($v)) $go = true; if ($go) $res[$k] = $v; } return new Arr($res); }
   function filter($f = null)  { return new Arr(array_filter($this->toArray(), $f)); }
   function filterKeys($f)     { $res = array(); foreach ($this as $k => $v) { if ($f($k)) $res[$k] = $v; } return new Arr($res); }
-  function filterNot($f)      { return $this->filter(function ($x) { return !$f($x); }); }
+  function filterNot($f)      { return $this->filter(function ($x) use ($f) { return !$f($x); }); }
   function flatMap($f)        { return $this->map($f)->flatten(); }
   function flatten()          { $res = array(); foreach ($this as $k => $vs) foreach ($vs as $k => $v) $res[] = $v; return new Arr($res);  }
   function flip()             { return new Arr(array_flip($this->toArray())); }
