@@ -180,18 +180,42 @@ final class BitSet extends AbstractIntArray {
 class BloomFilter {
   public $length;
   public $bitset;
+  private $hashFunction;
 
-  function hash($key) {
-    return array(
-      abs(hexdec(hash('crc32', 'm'.$key.'a')) % $this->length),
-      abs(hexdec(hash('crc32', 'p'.$key.'b')) % $this->length),
-      abs(hexdec(hash('crc32', 't'.$key.'c')) % $this->length)
-    );
+
+  /**
+   * @param int $length - length of bloomfiltre in bits
+   * @param callable $hashFunction
+   * @param BitSet $bitset custom bitset
+   */
+  function __construct($length, $hashFunction = null, $bitset = null) {
+    $this->length = $length;
+
+    if ($bitset === null) {
+      $this->bitset = new BitSet($length);
+    } else {
+      $this->bitset = $bitset;
+    }
+
+    if ($hashFunction === null) {
+      $hashFunction = function ($key) {
+        return array(
+          hexdec(hash('crc32', 'm'.$key.'a')),
+          hexdec(hash('crc32', 'p'.$key.'b')),
+          hexdec(hash('crc32', 't'.$key.'c'))
+        );
+      };
+    }
+    $this->hashFunction = $hashFunction;
   }
 
-  function __construct($length) {
-    $this->length = $length;
-    $this->bitset = new BitSet($length);
+  function hash($key) {
+    $f = $this->hashFunction;
+    $hs = [];
+    foreach ($f($key) as $h) {
+      $hs[] = abs($h % $this->length);
+    }
+    return $hs;
   }
 
 
@@ -211,15 +235,7 @@ class BloomFilter {
 
   function merge(BloomFilter $bf) {
     if ($this->length !== $bf->length)
-      throw new \Exception('cannot merge');
-
-    if (count($this->hashes) !== count($this->hashes))
-      throw new \Exception('cannot merge');
-
-    foreach ($this->hashes as $i => $_) {
-      if ($this->hashes[$i] !== $bf->hashes[$i])
-        throw new \Exception('cannot merge');
-    }
+      throw new \Exception('cannot merge two bloom filters of different lengths');
 
     $bf = new BloomFilter($this->length);
     $bf->bitset = $this->bitset->_or($bf->bitset);
