@@ -27,7 +27,7 @@ final class Access implements \ArrayAccess {
   }
 
   function offsetGet($offset) {
-    return new Access(function ($x) use ($offset, $offset) {
+    return new Access(function ($x) use ($offset) {
       return $this($x)[$offset];
     });
   }
